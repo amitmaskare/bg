@@ -1,0 +1,430 @@
+-- Users Table
+CREATE TABLE Users (
+    ID INT PRIMARY KEY AUTO_INCREMENT,
+    Email VARCHAR(255) UNIQUE NOT NULL,
+    PasswordHash VARCHAR(255) NOT NULL,
+    Role ENUM('user', 'admin', 'moderator') NOT NULL DEFAULT 'user',
+    FirstName VARCHAR(255),
+    LastName VARCHAR(255),
+    ProfilePicture VARCHAR(255),
+    DateOfBirth DATE,
+    Gender ENUM('male', 'female', 'other'),
+    PhoneNumber VARCHAR(20),
+    AddressLine1 VARCHAR(255),
+    AddressLine2 VARCHAR(255),
+    City VARCHAR(255),
+    State VARCHAR(255),
+    PostalCode VARCHAR(10),
+    Country VARCHAR(255),
+    AboutMe TEXT,
+    Website VARCHAR(255),
+    CreatedAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    IsVerified BOOLEAN DEFAULT FALSE,
+    VerificationToken VARCHAR(255),
+    ResetPasswordToken VARCHAR(255),
+    LastLoginAt TIMESTAMP,
+    IsActive BOOLEAN DEFAULT TRUE,
+    ContactInformation TEXT, -- other contact info, JSON format
+    SocialLinks TEXT, -- links to social profiles, JSON format
+    DeviceTokens TEXT,  -- JSON array of device tokens for push notifications
+    AppVersion VARCHAR(255), -- Mobile app version
+    GoogleID VARCHAR(255), -- Example social login ID
+    ReferralCode VARCHAR(255), -- User's referral code
+    ReferrerID INT,  -- ID of the user who referred this user
+    MFA_Method VARCHAR(255), -- Multi-factor authentication method
+    MFA_Secret VARCHAR(255),  -- Multi-factor authentication secret (store securely)
+    FOREIGN KEY (ReferrerID) REFERENCES Users(ID)
+);
+
+-- Product Categories Table (Hierarchical)
+CREATE TABLE ProductCategories (
+    ID INT PRIMARY KEY AUTO_INCREMENT,
+    Name VARCHAR(255) NOT NULL,
+    ParentCategoryID INT,  -- NULL for top-level categories
+    FOREIGN KEY (ParentCategoryID) REFERENCES ProductCategories(ID)
+	
+);
+
+-- Product Variations Table
+CREATE TABLE ProductVariations (
+    ID INT PRIMARY KEY AUTO_INCREMENT,
+    ProductID INT NOT NULL,
+    SKU VARCHAR(255) UNIQUE,  -- Variation-specific SKU
+    Price DECIMAL(10, 2),
+    QuantityInStock INT,       -- Inventory tracking at the variation level
+    MainImage VARCHAR(255),    -- Variation-specific image
+    OtherImages TEXT,          -- JSON array of variation-specific images
+    Attributes TEXT,            -- JSON to store key-value pairs of attributes (e.g., {"color": "red", "size": "M"})
+    FOREIGN KEY (ProductID) REFERENCES Products(ID)
+);
+
+-- Products Table
+CREATE TABLE Products (
+    ID INT PRIMARY KEY AUTO_INCREMENT,
+    Name VARCHAR(255) NOT NULL,
+    Description TEXT,
+    Brand VARCHAR(255),
+    CategoryID INT NOT NULL,      -- Link to the category
+    SubcategoryID INT,        -- Link to the subcategory (can be NULL)
+    Specifications TEXT,  -- JSON or similar for complex specs
+    MainImage VARCHAR(255), -- Path to main image (for the base product)
+    OtherImages TEXT,       -- JSON array of paths to other images (for the base product)
+    Weight DECIMAL(10, 2),   -- Weight of the product
+    Dimensions VARCHAR(255), -- Dimensions (e.g., "10x5x2 cm")
+    Manufacturer VARCHAR(255),  optional
+    Supplier VARCHAR(255),      
+    UPC VARCHAR(255) UNIQUE,   -- Universal Product Code 
+    EAN VARCHAR(255) UNIQUE,   -- European Article Number 
+    CreatedAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    UpdatedAt TIMESTAMP,       -- Last updated timestamp
+    MobileDescription TEXT,  -- Mobile-optimized description
+    ProductVideos TEXT,      -- JSON array of product video URLs
+    RelatedProducts TEXT,   -- JSON array of related product IDs
+    SearchKeywords TEXT,      -- Keywords for search
+    FOREIGN KEY (CategoryID) REFERENCES ProductCategories(ID),
+    FOREIGN KEY (SubcategoryID) REFERENCES ProductCategories(ID)
+	meta description
+	meta keywords
+	GST
+);
+
+-- Stock Locations Table
+CREATE TABLE StockLocations (
+    ID INT PRIMARY KEY AUTO_INCREMENT,
+    SellerID INT NOT NULL,  -- Link to the seller who owns this location
+    Name VARCHAR(255) NOT NULL,
+    Address TEXT,
+    ContactInformation TEXT,
+    FOREIGN KEY (SellerID) REFERENCES Users(ID)  -- Foreign key constraint
+);
+
+-- Listings Table
+CREATE TABLE Listings (
+    ID INT PRIMARY KEY AUTO_INCREMENT,
+    SellerID INT NOT NULL,
+    ProductID INT,        -- Can be NULL if not linked to a product
+    ProductVariationID INT, -- Link to product variation (can be NULL)
+    StockLocationID INT NOT NULL,  -- Location of the listed items
+    CategoryID INT NOT NULL,      -- Link to the category
+    SubcategoryID INT,        -- Link to the subcategory (can be NULL)
+    ListingType ENUM('sale', 'purchase') NOT NULL,
+    Quantity INT NOT NULL,
+    Price DECIMAL(10, 2) NOT NULL,
+    Currency VARCHAR(3) NOT NULL DEFAULT 'USD',  -- Add Currency (ISO 4217 code)
+    ExpiryDate DATE,       -- For perishable goods
+    Status ENUM('pending', 'published', 'sold', 'closed') DEFAULT 'pending',
+    Description TEXT,      -- More details specific to the listing
+    MainImage VARCHAR(255), -- Path to main image (copied from Product or uploaded)
+    OtherImages TEXT,       -- JSON array of paths to other images (copied or uploaded)
+    CreatedAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    UpdatedAt TIMESTAMP,
+    MobileImages TEXT,      -- JSON array of mobile-optimized image URLs
+    Latitude DECIMAL(9,6),   -- Geolocation (latitude)
+    Longitude DECIMAL(9,6),  -- Geolocation (longitude)
+    Condition VARCHAR(255),  -- Condition of the listed item
+    FOREIGN KEY (SellerID) REFERENCES Users(ID),
+    FOREIGN KEY (StockLocationID) REFERENCES StockLocations(ID),
+    FOREIGN KEY (ProductID) REFERENCES Products(ID), -- Optional foreign key
+    FOREIGN KEY (ProductVariationID) REFERENCES ProductVariations(ID),  -- Link to variation
+    FOREIGN KEY (CategoryID) REFERENCES ProductCategories(ID),
+    FOREIGN KEY (SubcategoryID) REFERENCES ProductCategories(ID)
+);
+
+-- Listing Likes Table
+CREATE TABLE ListingLikes (
+    ID INT PRIMARY KEY AUTO_INCREMENT,
+    UserID INT NOT NULL,
+    ListingID INT NOT NULL,
+    LikedAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (UserID) REFERENCES Users(ID),
+    FOREIGN KEY (ListingID) REFERENCES Listings(ID),
+    UNIQUE KEY (UserID, ListingID) -- Prevent duplicate likes
+);
+
+-- Bids Table
+CREATE TABLE Bids (
+    ID INT PRIMARY KEY AUTO_INCREMENT,
+    ListingID INT NOT NULL,
+    BidderID INT NOT NULL,
+    Amount DECIMAL(10, 2) NOT NULL,
+    Quantity INT NOT NULL,
+    Status ENUM('pending', 'approved', 'rejected', 'countered') DEFAULT 'pending',
+    BidTime TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    CounterOfferAmount DECIMAL(10, 2), -- For counter-offers
+    CounterOfferReason TEXT,       -- Reason for counter-offer
+    RejectionReason TEXT,          -- Reason for bid rejection
+    FOREIGN KEY (ListingID) REFERENCES Listings(ID),
+    FOREIGN KEY (BidderID) REFERENCES Users(ID)
+);
+
+-- Orders Table (Comprehensive)
+CREATE TABLE Orders (
+    ID INT PRIMARY KEY AUTO_INCREMENT,
+    OrderID VARCHAR(255) UNIQUE NOT NULL, -- Publicly visible order ID (e.g., a UUID)
+    BidID INT NOT NULL,  -- Link to the accepted bid
+    SellerID INT NOT NULL,
+    BuyerID INT NOT NULL,
+    OrderType ENUM('buy_now', 'bid') NOT NULL,
+    OrderStatus ENUM('pending', 'processing', 'shipped', 'completed', 'cancelled', 'refunded', 'returned') DEFAULT 'pending', -- More order statuses
+    OrderDate TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    ShippingAddressID INT,  -- Link to Shipping Address (separate table)
+    BillingAddressID INT, -- Link to Billing Address (separate table)
+    ShippingMethodID INT, -- Link to Shipping Method
+    ShippingProviderID INT, -- Link to Shipping Provider
+    TrackingNumber VARCHAR(255),
+    PaymentMethodID INT, -- Link to Payment Method
+    TransactionID VARCHAR(255),
+    CancellationReason TEXT,
+    CancelledBy INT,
+    Notes TEXT, -- Any additional order notes
+    OrderTrackingURL VARCHAR(255), -- URL for tracking shipment
+    FOREIGN KEY (BidID) REFERENCES Bids(ID),
+    FOREIGN KEY (SellerID) REFERENCES Users(ID),
+    FOREIGN KEY (BuyerID) REFERENCES Users(ID),
+    FOREIGN KEY (CancelledBy) REFERENCES Users(ID),
+    FOREIGN KEY (ShippingAddressID) REFERENCES Addresses(ID),
+    FOREIGN KEY (BillingAddressID) REFERENCES Addresses(ID),
+    FOREIGN KEY (ShippingMethodID) REFERENCES ShippingMethods(ID),
+    FOREIGN KEY (ShippingProviderID) REFERENCES ShippingProviders(ID),
+    FOREIGN KEY (PaymentMethodID) REFERENCES PaymentMethods(ID)
+);
+
+-- Addresses Table (Separate table for addresses)
+CREATE TABLE Addresses (
+    ID INT PRIMARY KEY AUTO_INCREMENT,
+    UserID INT NOT NULL,  -- Link to the user who owns this address
+    AddressLine1 VARCHAR(255),
+    AddressLine2 VARCHAR(255),
+    City VARCHAR(255),
+    State VARCHAR(255),
+    PostalCode VARCHAR(10),
+    Country VARCHAR(255),
+    IsDefaultShipping BOOLEAN DEFAULT FALSE,
+    IsDefaultBilling BOOLEAN DEFAULT FALSE,
+    AddressType ENUM('shipping', 'billing') NOT NULL,
+    VerificationStatus VARCHAR(255),  -- Address verification status
+    Latitude DECIMAL(9,6),   -- Geolocation (latitude)
+    Longitude DECIMAL(9,6),  -- Geolocation (longitude)
+    FOREIGN KEY (UserID) REFERENCES Users(ID)
+);
+
+-- ShippingMethods Table
+CREATE TABLE ShippingMethods (
+    ID INT PRIMARY KEY AUTO_INCREMENT,
+    Name VARCHAR(255) NOT NULL,  -- e.g., "Standard Shipping", "Express Shipping"
+    Description TEXT,
+    Cost DECIMAL(10, 2)
+);
+
+-- ShippingProviders Table
+CREATE TABLE ShippingProviders (
+    ID INT PRIMARY KEY AUTO_INCREMENT,
+    Name VARCHAR(255) NOT NULL, -- e.g., "USPS", "FedEx", "UPS"
+    ContactInformation TEXT
+);
+
+-- PaymentMethods Table (Revised for Tokenization)
+CREATE TABLE PaymentMethods (
+    ID INT PRIMARY KEY AUTO_INCREMENT,
+    UserID INT NOT NULL,
+    PaymentGateway VARCHAR(255) NOT NULL, -- e.g., "stripe", "razorpay"
+    PaymentMethodID VARCHAR(255) NOT NULL, -- Token or ID from the payment gateway
+    CardBrand VARCHAR(255),  -- e.g., "visa", "mastercard" (optional)
+    Last4Digits VARCHAR(4), -- Last 4 digits of card (optional, for display purposes)
+    BillingAddressID INT, -- Link to billing address
+    FOREIGN KEY (UserID) REFERENCES Users(ID),
+    FOREIGN KEY (BillingAddressID) REFERENCES Addresses(ID)
+);
+
+-- OrderBilling Table (Comprehensive)
+CREATE TABLE OrderBilling (
+    ID INT PRIMARY KEY AUTO_INCREMENT,
+    OrderID INT NOT NULL,
+    ListingID INT NOT NULL,
+    Quantity INT NOT NULL,
+    Price DECIMAL(10, 2) NOT NULL,
+    Subtotal DECIMAL(10, 2) NOT NULL,
+    Taxes DECIMAL(10, 2),
+    TaxRate DECIMAL(5, 2),  -- Tax rate applied
+    DiscountAmount DECIMAL(10, 2),
+    DiscountType ENUM('percentage', 'fixed'),
+    CouponCode VARCHAR(255), -- Store coupon code used
+    PlatformFee DECIMAL(10, 2),
+    DeliveryCharge DECIMAL(10, 2),
+    TotalAmount DECIMAL(10, 2) NOT NULL,
+    Currency VARCHAR(3) NOT NULL DEFAULT 'USD',
+    FOREIGN KEY (OrderID) REFERENCES Orders(ID),
+    FOREIGN KEY (ListingID) REFERENCES Listings(ID)
+);
+
+-- DiscountCoupons Table
+CREATE TABLE DiscountCoupons (
+    ID INT PRIMARY KEY AUTO_INCREMENT,
+    Code VARCHAR(255) UNIQUE NOT NULL,
+    DiscountType ENUM('percentage', 'fixed') NOT NULL,
+    DiscountAmount DECIMAL(10, 2) NOT NULL,
+    ValidFrom DATE,
+    ValidTo DATE,
+    IsActive BOOLEAN DEFAULT TRUE
+);
+
+-- Messages Table (Expanded)
+CREATE TABLE Messages (
+    ID INT PRIMARY KEY AUTO_INCREMENT,
+    SenderID INT NOT NULL,
+    ReceiverID INT NOT NULL,
+    ListingID INT,      -- Optional: Relate to a listing
+    Content TEXT,
+    Timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    IsRead BOOLEAN DEFAULT FALSE, -- Track message read status
+    MessageType ENUM('text', 'image', 'video', 'file') DEFAULT 'text', -- Type of message
+    FOREIGN KEY (SenderID) REFERENCES Users(ID),
+    FOREIGN KEY (ReceiverID) REFERENCES Users(ID),
+    FOREIGN KEY (ListingID) REFERENCES Listings(ID)
+);
+
+-- Notifications Table
+CREATE TABLE Notifications (
+    ID INT PRIMARY KEY AUTO_INCREMENT,
+    UserID INT NOT NULL,
+    Type VARCHAR(255), -- e.g., 'new_bid', 'order_update'
+    Message TEXT,
+    IsRead BOOLEAN DEFAULT FALSE,
+    Timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (UserID) REFERENCES Users(ID)
+);
+
+-- UserSettings Table
+CREATE TABLE UserSettings (
+    ID INT PRIMARY KEY AUTO_INCREMENT,
+    UserID INT UNIQUE NOT NULL,
+    Theme VARCHAR(255) DEFAULT 'light',  -- e.g., 'light', 'dark', 'custom'
+    NotificationPreferences TEXT,       -- JSON for granular control
+    OtherSettings TEXT,                  -- JSON for other settings
+    FOREIGN KEY (UserID) REFERENCES Users(ID)
+);
+
+-- UserReviews Table
+CREATE TABLE UserReviews (
+    ID INT PRIMARY KEY AUTO_INCREMENT,
+    ReviewerID INT NOT NULL,
+    RevieweeID INT NOT NULL,
+    Rating INT,            -- e.g., 1 to 5 stars
+    ReviewText TEXT,
+    ReviewDate TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (ReviewerID) REFERENCES Users(ID),
+    FOREIGN KEY (RevieweeID) REFERENCES Users(ID)
+);
+
+-- ListingViews Table (For view tracking)
+CREATE TABLE ListingViews (
+    ID INT PRIMARY KEY AUTO_INCREMENT,
+    ListingID INT NOT NULL,
+    UserID INT, -- Optional: Track which user viewed
+    ViewedAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (ListingID) REFERENCES Listings(ID)
+);
+
+-- Inventory Table
+CREATE TABLE Inventory (
+    ID INT PRIMARY KEY AUTO_INCREMENT,
+    ListingID INT NOT NULL,
+    QuantityInStock INT NOT NULL,
+    FOREIGN KEY (ListingID) REFERENCES Listings(ID)
+);
+
+-- OrderStatusHistory Table
+CREATE TABLE OrderStatusHistory (
+    ID INT PRIMARY KEY AUTO_INCREMENT,
+    OrderID INT NOT NULL,
+    OrderStatus ENUM('pending', 'processing', 'shipped', 'completed', 'cancelled', 'refunded', 'returned'),
+    StatusChangeTime TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (OrderID) REFERENCES Orders(ID)
+);
+
+-- Wishlist Table
+CREATE TABLE Wishlist (
+    ID INT PRIMARY KEY AUTO_INCREMENT,
+    UserID INT NOT NULL,
+    ProductID INT NOT NULL,
+    AddedAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (UserID) REFERENCES Users(ID),
+    FOREIGN KEY (ProductID) REFERENCES Products(ID)
+);
+
+-- RecentlyViewed Table
+CREATE TABLE RecentlyViewed (
+    ID INT PRIMARY KEY AUTO_INCREMENT,
+    UserID INT NOT NULL,
+    ProductID INT NOT NULL,
+    ViewedAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (UserID) REFERENCES Users(ID),
+    FOREIGN KEY (ProductID) REFERENCES Products(ID)
+);
+
+-- Roles Table
+CREATE TABLE Roles (
+    ID INT PRIMARY KEY AUTO_INCREMENT,
+    Name VARCHAR(255) UNIQUE NOT NULL,  -- e.g., "Order Manager", "Inventory Clerk", "Customer Support"
+    Description TEXT
+);
+
+-- Permissions Table
+CREATE TABLE Permissions (
+    ID INT PRIMARY KEY AUTO_INCREMENT,
+    Name VARCHAR(255) UNIQUE NOT NULL, -- e.g., "view_orders", "edit_products", "manage_users"
+    Description TEXT
+);
+
+-- RolePermissions Table (Junction Table)
+CREATE TABLE RolePermissions (
+    RoleID INT NOT NULL,
+    PermissionID INT NOT NULL,
+    PRIMARY KEY (RoleID, PermissionID), -- Composite key
+    FOREIGN KEY (RoleID) REFERENCES Roles(ID),
+    FOREIGN KEY (PermissionID) REFERENCES Permissions(ID)
+);
+
+-- UserRoles Table (Junction Table)
+CREATE TABLE UserRoles (
+    UserID INT NOT NULL,
+    RoleID INT NOT NULL,
+    PRIMARY KEY (UserID, RoleID), -- Composite key
+    FOREIGN KEY (UserID) REFERENCES Users(ID),
+    FOREIGN KEY (RoleID) REFERENCES Roles(ID)
+);
+
+-- Users Table (Updated - No direct roles)
+-- Remove the Role column from the Users table.  Roles are now assigned via UserRoles.
+ALTER TABLE Users DROP COLUMN Role;  -- Remove the old Role ENUM
+
+-- Example Data (Illustrative)
+
+-- Roles
+INSERT INTO Roles (Name, Description) VALUES
+('Order Manager', 'Manages orders'),
+('Inventory Clerk', 'Manages inventory'),
+('Customer Support', 'Handles customer inquiries');
+
+-- Permissions
+INSERT INTO Permissions (Name, Description) VALUES
+('view_orders', 'View order details'),
+('edit_products', 'Edit product information'),
+('manage_users', 'Manage user accounts'),
+('view_inventory', 'View inventory levels'),
+('update_inventory', 'Update inventory levels'),
+('respond_to_inquiries', 'Respond to customer inquiries');
+
+-- RolePermissions (Assign permissions to roles)
+INSERT INTO RolePermissions (RoleID, PermissionID) VALUES
+(1, 1),  -- Order Manager can view orders
+(1, 2),  -- Order Manager can edit products (maybe for order adjustments)
+(2, 4),  -- Inventory Clerk can view inventory
+(2, 5),  -- Inventory Clerk can update inventory
+(3, 6);  -- Customer Support can respond to inquiries
+
+-- UserRoles (Assign roles to users)
+INSERT INTO UserRoles (UserID, RoleID) VALUES
+(1, 1), -- User 1 is an Order Manager
+(2, 2), -- User 2 is an Inventory Clerk
+(3, 3); -- User 3 is Customer Support
