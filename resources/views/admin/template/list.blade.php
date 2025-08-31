@@ -49,8 +49,6 @@
                                             <tr>
                     <th>#</th>
                     <th>Template Name</th>
-                    <th>Type</th>
-                    <th>Langauage</th>
                     <th>Action</th>
                   </tr>
                                             </thead>
@@ -61,9 +59,10 @@
                                         <tr>
                                             <td>{{$index+1}}</td>
                                             <td>{{$value->template_name}}</td>
-                                            <td>{{$value->type}}</td>
-                                            <td>{{$value->langauge}}</td>
-                                            <td></td>
+                                            <td>
+            <a href="{{ route('template.edit', $value->id) }}" class="btn btn-success btn-sm me-2">Edit</a>
+
+                                            </td>
                                         </tr>
                                         @endforeach
                                         @endif

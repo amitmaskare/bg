@@ -327,11 +327,13 @@ Route::prefix('admin')->middleware(['auth.admin'])->namespace('App\Http\Controll
 
     Route::get('/template', [TemplateController::class, 'index'])->name('template');
     Route::get('/template/add', [TemplateController::class, 'add'])->name('template.add');
+    Route::get('/template/edit/{id}', [TemplateController::class, 'edit'])->name('template.edit');
     Route::post('/saveTemplate', [TemplateController::class, 'saveTemplate'])->name('saveTemplate');
 
     // email template
     Route::get('/email-template', [TemplateController::class, 'email_template'])->name('email_template');
     Route::post('/email-template-update', [TemplateController::class, 'updateEmailTemplate'])->name('save_email_template');
+    Route::post('/getTemplateData', [TemplateController::class, 'getTemplateData'])->name('getTemplateData');
 });
 Route::get('whatsapp', [WhatsAppController::class, 'index']);
 Route::get('/checkoutForm', [StripePaymentController::class, 'checkoutForm']);

@@ -136,10 +136,10 @@ public function add(Request $request)
     }, $template->body);
 
     $tag_values = [
-        '{name}'    => $userName,
-        '{product}' => $productName,
-        '{price}'   => $productPrice,
-        '{date_time}'    => $date,
+        '{name}'    => $userName ?? '',
+        '{product}' => $productName ?? '',
+        '{price}'   => $productPrice ?? '',
+        '{date_time}'    => $date ?? '',
     ];
 
     $subject = str_replace(array_keys($tag_values), array_values($tag_values), $template->subject);

@@ -17,47 +17,6 @@ class TemplateController extends Controller
         return view('admin.template.list', compact('data'));
     }
 
-    public function ajax_manage_page(Request $request)
-    {
-        $template = new Template();
-        $getData = $template->getDatatables($request);
-        $start = $request->input('start', 0);
-        $draw = $request->input('draw', 1);
-        $data = [];
-        $no = $start;
-        foreach ($getData as $row) {
-
-            $btn = '<div class="dropdown">
-                  <button type="button" class="btn p-0 dropdown-toggle hide-arrow" data-bs-toggle="dropdown"><i class="icon-base bx bx-dots-vertical-rounded"></i></button>
-                  <div class="dropdown-menu">
-                    <a class="dropdown-item" href="' . route('template.edit', ['id' => $row->template_id]) . '"><i class="icon-base bx bx-edit-alt me-1"></i> Edit</a>';
-
-            $btn .= '<a class="dropdown-item" href="javascript:void(0);" onclick="deleteItem(' . $row->template_id . ')"><i class="icon-base bx bx-trash me-1"></i> Delete</a>
-                  </div>
-                </div>';
-
-            $active = $row->template_active == 'Y' ? '<span class="badge bg-label-primary me-1 btn btn-sm">Y</span>' : '<span class="badge bg-label-danger me-1 btn btn-sm">N</span>';
-
-            $no++;
-            $nestedData = [];
-            $nestedData[] = $no;
-            $nestedData[] = ucfirst($row->template_name);
-            $nestedData[] = ucfirst($row->template_campaign);
-            $nestedData[] = $active;
-            $nestedData[] = $row->template_type;
-            $nestedData[] = $btn;
-            $data[] = $nestedData;
-        }
-
-        $output = [
-            "draw" => $draw,
-            "recordsTotal" => $template->countAll(),
-            "recordsFiltered" => $template->countFiltered($request),
-            "data" => $data,
-        ];
-
-        return response()->json($output);
-    }
 
     function add()
     {
@@ -71,11 +30,8 @@ class TemplateController extends Controller
     {
         $validator = Validator::make($request->all(), [
             'template_name' => ['required'],
-            'type' => ['required'],
         ]);
-        if ($validator->fails()) {
-            return back()->withErrors($validator)->withInput();
-        }
+        
         $templateId = $request->id;
         if (isset($templateId)) {
             $template = Template::find($templateId);
@@ -84,11 +40,16 @@ class TemplateController extends Controller
             $template = new Template();
             $msg = "added";
         }
-
+        $tags = [];
+        $count = count($request['tags']);
+          for ($i=0; $i < $count; $i++)
+         {
+                 $tags[] =[
+                  'tags' => $request['tags'][$i],
+                 ];    
+          }
         $template->template_name = $request->template_name;
-        $template->status = $request->status;
-        $template->type = $request->type;
-        $template->langauge = $request->language;
+        $template->tags = json_encode($tags);
         $template->save();
         session()->flash('success', "Template {$msg} successfully");
         return redirect()->route('template');
@@ -100,6 +61,8 @@ class TemplateController extends Controller
         $data['heading'] = "Edit Template";
         $data['page'] = "template";
         $data['template'] = Template::findOrFail($id);
+        $data['tags'] = json_decode($data['template']->tags, true);
+       
         return view('admin.template.add', compact('data'));
     }
 
@@ -111,28 +74,112 @@ class TemplateController extends Controller
         return redirect()->route('template');
     }
 
-    function email_template(){
-        $data['template']=Template::all();
+    // function email_template(){
+    //     $data['template']=Template::all();
+    //     $data['title'] = "Email Template";
+    //     $data['heading'] = "Email Template List";
+    //     $data['page'] = "email-template";
+    //     $data['add_cart']=EmailTemplate::where('type','add_cart')->first();
+    //     $data['remove_cart']=EmailTemplate::where('type','remove_cart')->first();
+    //     $data['expiring_soon']=EmailTemplate::where('type','expiring_soon')->first();
+    //     $data['bid_accept']=EmailTemplate::where('type','bid_accept')->first();
+    //     $data['outbid']=EmailTemplate::where('type','outbid')->first();
+    //     $data['reject']=EmailTemplate::where('type','reject')->first();
+    //     $data['counter']=EmailTemplate::where('type','counter')->first();
+    //     $data['buy']=EmailTemplate::where('type','buy')->first();
+    //     $data['order']=EmailTemplate::where('type','order')->first();
+    //     $data['ship']=EmailTemplate::where('type','ship')->first();
+    //     return view('admin.template.email-template', compact('data'));
+    // }
+
+     function email_template(){
         $data['title'] = "Email Template";
         $data['heading'] = "Email Template List";
         $data['page'] = "email-template";
-        $data['add_cart']=EmailTemplate::where('type','add_cart')->first();
-        $data['remove_cart']=EmailTemplate::where('type','remove_cart')->first();
-        $data['expiring_soon']=EmailTemplate::where('type','expiring_soon')->first();
-        $data['bid_accept']=EmailTemplate::where('type','bid_accept')->first();
-        $data['outbid']=EmailTemplate::where('type','outbid')->first();
-        $data['reject']=EmailTemplate::where('type','reject')->first();
-        $data['counter']=EmailTemplate::where('type','counter')->first();
-        $data['buy']=EmailTemplate::where('type','buy')->first();
-        $data['order']=EmailTemplate::where('type','order')->first();
-        $data['ship']=EmailTemplate::where('type','ship')->first();
-        return view('admin.template.email-template', compact('data'));
+        $data['template']=Template::select('id','template_name')->get();
+        return view('admin.template.email_template', compact('data'));
+    }
+
+    public function getTemplateData(Request $request)
+    {
+        
+        if(!empty($request->template_id))
+        {
+            $getData=EmailTemplate::where('template_id',$request->template_id)->first();
+           
+            $templateData=Template::find($request->template_id);
+            $tags=json_decode($templateData->tags,true);
+           
+            $html='';
+            if(!empty($getData))
+            {
+                
+                $html.='<div class="row">
+                                                <div class="col-md-6">  
+                                                <label for="validationCustom01" class="col-form-label pt-0"><span>*</span>
+                                                    Subject</label>
+                                            <input type="text" class="form-control" name="subject" id="subject" value="'.$getData->subject.'" required>
+                                            </div>
+                                             <div class="col-md-6">  
+                                                <label for="validationCustom01" class="col-form-label pt-0"><span>*</span>
+                                                    Tags</label>
+                                              <select name="tags" id="tags" class="form-control" onchange="getTags(this.value)">
+                                                <option value="">Select</option>';
+                                                if(!empty($tags)){
+                                                    foreach($tags as $item){
+                                                $html.='<option value="{'.$item['tags'].'}">{'.$item['tags'].'}</option>';
+                                                    }}
+                                              $html .='</select>
+                                            </div>       
+
+                                         <div class="col-md-12 mt-3">
+                                        <label>Body</label>
+                                        <textarea name="body" class="form-control ckeditor" rows="8" id="editor1">'.$getData->body.'</textarea>
+                                        <small>Use tags <code>{name}</code>, <code>{product}</code>, <code>{price}</code>, <code>{date_time}</code></small>
+                                    </div>
+
+                                         </div>';
+            }
+            else{
+                 $html.='<div class="row">
+                                                <div class="col-md-6">  
+                                                <label for="validationCustom01" class="col-form-label pt-0"><span>*</span>
+                                                    Subject</label>
+                                            <input type="text" class="form-control" name="subject" id="subject" required>
+                                            </div>
+                                             <div class="col-md-6">  
+                                                <label for="validationCustom01" class="col-form-label pt-0"><span>*</span>
+                                                    Tags</label>
+                                              <select name="tags" id="tags" class="form-control" onchange="getTags(this.value)">
+                                                <option value="">Select</option>';
+                                                if(!empty($tags)){
+                                                    foreach($tags as $item){
+                                                $html.='<option value="{'.$item['tags'].'}">{'.$item['tags'].'}</option>';
+                                                    }}
+                                              $html .='</select>
+                                            </div>       
+
+                                        <div class="col-md-12 mt-3">
+                                        <label>Body</label>
+                                        <textarea name="body" class="form-control" rows="8" id="editor1"></textarea>
+                                        <small>Use tags <code>{name}</code>, <code>{product}</code>, <code>{price}</code>, <code>{date_time}</code></small>
+                                    </div>
+
+                                         </div>';
+            }
+
+            return response()->json([
+                'html'=>$html,
+                'subject'=>!empty($getData->subject) ? $getData->subject:$templateData->template_name,
+            ]);
+           // echo $html;
+        }
     }
 
     function updateEmailTemplate(Request $request)
     {
         EmailTemplate::updateOrCreate(
-            ['type' => $request->type],
+            ['template_id' => $request->template_id],
             ['subject' => $request->subject, 'body' => $request->body]
         );
 

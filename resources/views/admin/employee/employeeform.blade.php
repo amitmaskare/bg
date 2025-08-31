@@ -128,27 +128,12 @@
                                    <center> <button type="submit" class="btn btn-warning">{{ $employee ? 'Update' : 'Create' }}</button></center>
                                 </div>
                             </div>
-                                        
-                          
-                                             
+                                                               
                         </div>
                     </div>
                 </div>
             </div>
-                      <!--   <div class="col-xl-6">
-                            <div class="card">
-                               
-                                <div class="card-body">
-                                    <div class="digital-add needs-validation">
-                                  
-
-                                      
-
-                                    </div>
-                                </div>
-                            </div>
-                           
-                        </div> -->
+                     
                     </div>
 
                     </form>
