@@ -4,7 +4,7 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use App\Models\{EmailTemplate,User,ListingProduct,Category,Bid,Product,CartItem,Address,StockLocation};
+use App\Models\{EmailTemplate,User,ListingProduct,Category,Bid,Product,CartItem,Address,StockLocation,Trigger};
 use DB;
 use Mail;
 use App\Services\ShiprocketService;
@@ -128,7 +128,9 @@ public function add(Request $request)
      $productPrice= number_format($product->price, 2);
      $date  = now()->format('d M Y H:i');
 
-    $template = EmailTemplate::where('type', 'add_cart')->first();
+    $template = EmailTemplate::where('type', 'add_to_cart')->first();
+    $trigger=Trigger::find($template->template_id);
+    $tags=json_decode($trigger->fields,true);
     
     $allowed_tags = ['{name}', '{product}', '{price}','{date_time}'];
     $template->body = preg_replace_callback('/\{[^\}]+\}/', function ($matches) use ($allowed_tags) {
@@ -228,32 +230,32 @@ public function deleteCart(Request $request)
     $cartCount = $items->count();
     $cartSubtotal = $items->sum(fn($i) => $i->product->price * $i->quantity);
 
-    // $template = EmailTemplate::where('type', 'remove_cart')->first();
+    $template = EmailTemplate::where('type', 'remove_cart')->first();
     
-    // $allowed_tags = ['{name}', '{product}','{price}','{date_time}'];
-    // $template->body = preg_replace_callback('/\{[^\}]+\}/', function ($matches) use ($allowed_tags) {
-    //     return in_array($matches[0], $allowed_tags) ? $matches[0] : '';
-    // }, $template->body);
+    $allowed_tags = ['{name}', '{product}','{price}','{date_time}'];
+    $template->body = preg_replace_callback('/\{[^\}]+\}/', function ($matches) use ($allowed_tags) {
+        return in_array($matches[0], $allowed_tags) ? $matches[0] : '';
+    }, $template->body);
 
-    // $userEmail = Auth::user()->email;
-    // $userName = Auth::user()->name ?? 'Customer';
-    // $product     = ListingProduct::find($deletedItem->listing_id);
+    $userEmail = Auth::user()->email;
+    $userName = Auth::user()->name ?? 'Customer';
+    $product     = ListingProduct::find($deletedItem->listing_id);
 
-    // $tag_values = [
-    //     '{name}'      => $userName,
-    //     '{product}'   => $product->name ?? '',
-    //     '{price}'     => $product->price ?? 0,
-    //     '{date_time}' => now()->format('d-m-Y H:i:s'),
-    // ];
+    $tag_values = [
+        '{name}'      => $userName,
+        '{product}'   => $product->name ?? '',
+        '{price}'     => $product->price ?? 0,
+        '{date_time}' => now()->format('d-m-Y H:i:s'),
+    ];
 
-    // $subject = str_replace(array_keys($tag_values), array_values($tag_values), $template->subject);
-    // $body = str_replace(array_keys($tag_values), array_values($tag_values), $template->body);
+    $subject = str_replace(array_keys($tag_values), array_values($tag_values), $template->subject);
+    $body = str_replace(array_keys($tag_values), array_values($tag_values), $template->body);
 
-    // Mail::send('emails.template', ['subject' => $subject, 'body' => $body], function ($message) use ($subject, $userEmail) {
-    //     $message->to($userEmail)
-    //             ->subject($subject)
-    //             ->from('info@brgn.in', 'BRGN');
-    // });
+    Mail::send('emails.template', ['subject' => $subject, 'body' => $body], function ($message) use ($subject, $userEmail) {
+        $message->to($userEmail)
+                ->subject($subject)
+                ->from('info@brgn.in', 'BRGN');
+    });
 
     return response()->json([
         'success' => true,

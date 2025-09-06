@@ -10,5 +10,6 @@ class EmailTemplate extends Model
         'template_id',
         'subject',
         'body',
+        'type',
     ];
 }

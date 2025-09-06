@@ -36,6 +36,8 @@ class AuthController extends Controller
             'password' => Hash::make($validated['password']),
         ]);
 
+        
+
         return redirect()->back()->with('success', '<h3>Thank you for registration. Please <a href="' . route('authlogin') . '">click here</a> to login.</h3>');
 
     }

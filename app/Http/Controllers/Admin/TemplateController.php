@@ -4,7 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
-use App\Models\{Template, EmailTemplate};
+use App\Models\{Template, EmailTemplate,Trigger};
 use Illuminate\Support\Facades\Validator;
 class TemplateController extends Controller
 {
@@ -96,7 +96,7 @@ class TemplateController extends Controller
         $data['title'] = "Email Template";
         $data['heading'] = "Email Template List";
         $data['page'] = "email-template";
-        $data['template']=Template::select('id','template_name')->get();
+        $data['template']=Trigger::select('id','template_name')->get();
         return view('admin.template.email_template', compact('data'));
     }
 
@@ -107,8 +107,8 @@ class TemplateController extends Controller
         {
             $getData=EmailTemplate::where('template_id',$request->template_id)->first();
            
-            $templateData=Template::find($request->template_id);
-            $tags=json_decode($templateData->tags,true);
+            $templateData=Trigger::find($request->template_id);
+            $tags=json_decode($templateData->fields,true);
            
             $html='';
             if(!empty($getData))
@@ -131,7 +131,7 @@ class TemplateController extends Controller
                                                     }}
                                               $html .='</select>
                                             </div>       
-
+                                        <input type="text" name="type" value="'.$templateData->type.'">
                                          <div class="col-md-12 mt-3">
                                         <label>Body</label>
                                         <textarea name="body" class="form-control ckeditor" rows="8" id="editor1">'.$getData->body.'</textarea>
@@ -158,7 +158,8 @@ class TemplateController extends Controller
                                                     }}
                                               $html .='</select>
                                             </div>       
-
+                                        <input type="text" name="type" value="'.$templateData->type.'">
+                                        
                                         <div class="col-md-12 mt-3">
                                         <label>Body</label>
                                         <textarea name="body" class="form-control" rows="8" id="editor1"></textarea>
@@ -178,9 +179,13 @@ class TemplateController extends Controller
 
     function updateEmailTemplate(Request $request)
     {
+       
         EmailTemplate::updateOrCreate(
             ['template_id' => $request->template_id],
-            ['subject' => $request->subject, 'body' => $request->body]
+            ['subject' => $request->subject, 
+            'body' => $request->body,
+            'type'=>$request->type
+            ]
         );
 
         return back()->with('success', 'Template updated!');
