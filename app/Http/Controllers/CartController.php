@@ -135,6 +135,7 @@ public function add(Request $request)
 foreach ($tags as $item) {
     $allowed_tags[] = '{' . $item['tags'] . '}';
 }
+
    
     $template->body = preg_replace_callback('/\{[^\}]+\}/', function ($matches) use ($allowed_tags) {
         return in_array($matches[0], $allowed_tags) ? $matches[0] : '';
@@ -152,7 +153,6 @@ foreach ($tags as $item) {
     $tag = $item['tags']; 
     $tag_values['{' . $tag . '}'] = $values[$tag] ?? '';
 }
-
     // $tag_values = [
     //     '{name}'    => $userName ?? '',
     //     '{product}' => $productName ?? '',
