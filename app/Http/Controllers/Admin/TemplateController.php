@@ -131,7 +131,7 @@ class TemplateController extends Controller
                                                     }}
                                               $html .='</select>
                                             </div>       
-                                        <input type="text" name="type" value="'.$templateData->type.'">
+                                        <input type="hidden" name="type" value="'.$templateData->type.'">
                                          <div class="col-md-12 mt-3">
                                         <label>Body</label>
                                         <textarea name="body" class="form-control ckeditor" rows="8" id="editor1">'.$getData->body.'</textarea>
@@ -158,7 +158,7 @@ class TemplateController extends Controller
                                                     }}
                                               $html .='</select>
                                             </div>       
-                                        <input type="text" name="type" value="'.$templateData->type.'">
+                                        <input type="hidden" name="type" value="'.$templateData->type.'">
                                         
                                         <div class="col-md-12 mt-3">
                                         <label>Body</label>
