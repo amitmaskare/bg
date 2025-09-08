@@ -256,6 +256,12 @@
                     <span>Email Template</span>
                 </a>
             </li>
+              <li>
+                <a class="sidebar-header" href="{{route('whatsapp-template')}}">
+                    <i data-feather="home"></i>
+                    <span>Whatsapp Template</span>
+                </a>
+            </li>
              @endadmincan
            
         </ul>

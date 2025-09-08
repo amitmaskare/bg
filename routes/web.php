@@ -334,6 +334,12 @@ Route::prefix('admin')->middleware(['auth.admin'])->namespace('App\Http\Controll
     Route::get('/email-template', [TemplateController::class, 'email_template'])->name('email_template');
     Route::post('/email-template-update', [TemplateController::class, 'updateEmailTemplate'])->name('save_email_template');
     Route::post('/getTemplateData', [TemplateController::class, 'getTemplateData'])->name('getTemplateData');
+     
+    // whatsapp template
+     Route::get('/whatsapp-template', [TemplateController::class, 'whatsapp_template'])->name('whatsapp-template');
+    Route::post('/updateWhatsappTemplate', [TemplateController::class, 'updateWhatsappTemplate'])->name('updateWhatsappTemplate');
+    Route::post('/getWhatsappTemplate', [TemplateController::class, 'getWhatsappTemplate'])->name('getWhatsappTemplate');
+
 });
 Route::get('whatsapp', [WhatsAppController::class, 'index']);
 Route::get('/checkoutForm', [StripePaymentController::class, 'checkoutForm']);
