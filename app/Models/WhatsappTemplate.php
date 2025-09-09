@@ -9,6 +9,7 @@ class WhatsappTemplate extends Model
     protected $fillable = [
         'template_id',
         'subject',
+        'language',
         'body',
         'type',
     ];

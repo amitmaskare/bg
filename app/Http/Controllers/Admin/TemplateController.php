@@ -197,8 +197,16 @@ class TemplateController extends Controller
                 $html.='<div class="row">
                                                 <div class="col-md-6">  
                                                 <label for="validationCustom01" class="col-form-label pt-0"><span>*</span>
-                                                    Subject</label>
+                                                    Template Name</label>
                                             <input type="text" class="form-control" name="subject" id="subject" value="'.$getData->subject.'" required>
+                                            </div>
+                                             <div class="col-md-6">  
+                                                <label for="validationCustom01" class="col-form-label pt-0"><span>*</span>
+                                                    Langauge</label>
+                                          <select class="form-control" name="language" required>
+                             <option value="english" '.($getData->language=="english" ? "selected" : "").'>English</option>
+                                    <option value="hindi" '.($getData->language=="hindi" ? "selected" : "").'>Hindi</option>
+                                     </select>
                                             </div>
                                              <div class="col-md-6">  
                                                 <label for="validationCustom01" class="col-form-label pt-0"><span>*</span>
@@ -223,8 +231,16 @@ class TemplateController extends Controller
                  $html.='<div class="row">
                                                 <div class="col-md-6">  
                                                 <label for="validationCustom01" class="col-form-label pt-0"><span>*</span>
-                                                    Subject</label>
+                                                    Template Name</label>
                                             <input type="text" class="form-control" name="subject" id="subject" required>
+                                            </div>
+                                             <div class="col-md-6">  
+                                                <label for="validationCustom01" class="col-form-label pt-0"><span>*</span>
+                                                    Langauge</label>
+                                           <select class="form-control" name="language" required>
+                                           <option value="english">English</option>
+                                           <option value="hindi">Hindi</option>
+                                           </select>
                                             </div>
                                              <div class="col-md-6">  
                                                 <label for="validationCustom01" class="col-form-label pt-0"><span>*</span>
@@ -260,12 +276,13 @@ class TemplateController extends Controller
         WhatsappTemplate::updateOrCreate(
             ['template_id' => $request->template_id],
             ['subject' => $request->subject, 
+            'language' => $request->language,
             'body' => $request->body,
             'type'=>$request->type
             ]
         );
 
-        return back()->with('success', 'Template updated!');
+        return back()->with('success', 'Whatsapp Template updated!');
     }
 
    
