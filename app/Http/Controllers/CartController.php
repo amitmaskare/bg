@@ -125,16 +125,15 @@ public function add(Request $request)
     $userName    = $user->name ?? 'Customer';
     $userEmail   = $user->email ?? 'info@brgn.in';
     $productName = $product->product_name ?? '';
-     $productPrice= number_format($product->price, 2);
-     $date  = now()->format('d M Y H:i');
+    $productPrice= number_format($product->price, 2);
 
     $template = EmailTemplate::where('type', 'add_to_cart')->first();
     $trigger=Trigger::find($template->template_id);
     $tags=json_decode($trigger->fields,true);
     $allowed_tags = [];
-foreach ($tags as $item) {
-    $allowed_tags[] = '{' . $item['tags'] . '}';
-}
+    foreach ($tags as $item) {
+        $allowed_tags[] = '{' . $item['tags'] . '}';
+    }
 
    
     $template->body = preg_replace_callback('/\{[^\}]+\}/', function ($matches) use ($allowed_tags) {
@@ -142,23 +141,23 @@ foreach ($tags as $item) {
     }, $template->body);
 
 
-    $values = [
-    'name'      => $userName ?? '',
-    'product'   => $productName ?? '',
-    'price'     => $productPrice ?? '',
-    'date_time' => $date ?? '',
-];
-    $tag_values = [];
-foreach ($tags as $item) {
-    $tag = $item['tags']; 
-    $tag_values['{' . $tag . '}'] = $values[$tag] ?? '';
-}
-    // $tag_values = [
-    //     '{name}'    => $userName ?? '',
-    //     '{product}' => $productName ?? '',
-    //     '{price}'   => $productPrice ?? '',
-    //     '{date_time}'    => $date ?? '',
-    // ];
+//     $values = [
+//     'name'      => $userName ?? '',
+//     'product'   => $productName ?? '',
+//     'price'     => $productPrice ?? '',
+//     'date_time' => $date ?? '',
+// ];
+//     $tag_values = [];
+// foreach ($tags as $item) {
+//     $tag = $item['tags']; 
+//     $tag_values['{' . $tag . '}'] = $values[$tag] ?? '';
+// }
+    $tag_values = [
+        '{name}'    => $userName ?? '',
+        '{product}' => $productName ?? '',
+        '{price}'   => $productPrice ?? '',
+        '{date_time}'    => date('Y-m-d H:i'),
+    ];
 
     $subject = str_replace(array_keys($tag_values), array_values($tag_values), $template->subject);
     $body    = str_replace(array_keys($tag_values), array_values($tag_values), $template->body);
@@ -248,7 +247,14 @@ public function deleteCart(Request $request)
 
     $template = EmailTemplate::where('type', 'remove_cart')->first();
     
-    $allowed_tags = ['{name}', '{product}','{price}','{date_time}'];
+    // $allowed_tags = ['{name}', '{product}','{price}','{date_time}'];
+    $trigger=Trigger::find($template->template_id);
+    $tags=json_decode($trigger->fields,true);
+    $allowed_tags = [];
+    foreach ($tags as $item) {
+        $allowed_tags[] = '{' . $item['tags'] . '}';
+    }
+
     $template->body = preg_replace_callback('/\{[^\}]+\}/', function ($matches) use ($allowed_tags) {
         return in_array($matches[0], $allowed_tags) ? $matches[0] : '';
     }, $template->body);
@@ -261,7 +267,7 @@ public function deleteCart(Request $request)
         '{name}'      => $userName,
         '{product}'   => $product->name ?? '',
         '{price}'     => $product->price ?? 0,
-        '{date_time}' => now()->format('d-m-Y H:i:s'),
+        '{date_time}' => date('Y-m-d H:i')
     ];
 
     $subject = str_replace(array_keys($tag_values), array_values($tag_values), $template->subject);

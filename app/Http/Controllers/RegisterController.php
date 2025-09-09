@@ -28,6 +28,32 @@ class RegisterController extends Controller
             'password' => Hash::make($validated['password']),
         ]);
 
+        $template = EmailTemplate::where('type', 'register')->first();
+        $trigger=Trigger::find($template->template_id);
+        $tags=json_decode($trigger->fields,true);
+        $allowed_tags = [];
+        foreach ($tags as $item) {
+            $allowed_tags[] = '{' . $item['tags'] . '}';
+        }
+
+        $template->body = preg_replace_callback('/\{[^\}]+\}/', function ($matches) use ($allowed_tags) {
+            return in_array($matches[0], $allowed_tags) ? $matches[0] : '';
+        }, $template->body);
+    
+        $tag_values = [
+            '{name}' => $fullName,
+            '{email}' => $validated['email']
+        ];
+    
+        $subject = str_replace(array_keys($tag_values), array_values($tag_values), $template->subject);
+        $body = str_replace(array_keys($tag_values), array_values($tag_values), $template->body);
+    
+        Mail::send('emails.template', ['subject' => $subject, 'body' => $body], function ($message) use ($subject, $validated) {
+            $message->to($validated['email'])
+                    ->subject($subject)
+                    ->from('info@brgn.in', 'BRGN');
+        });
+
         return redirect()->back()->with('success', '<h3>Thank you for registration. Please <a href="' . route('authlogin') . '">click here</a> to login.</h3>');
 
     }

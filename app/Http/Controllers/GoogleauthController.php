@@ -33,30 +33,59 @@ class GoogleauthController extends Controller
                 $user->avatar = $googleUser->getAvatar();
                 $user->password = Hash::make(uniqid());
                 $user->save();
-                // $template = EmailTemplate::where('type', 'user_registration')->first();
+                $template = EmailTemplate::where('type', 'register')->first();
+                $trigger=Trigger::find($template->template_id);
+                $tags=json_decode($trigger->fields,true);
+                $allowed_tags = [];
+                foreach ($tags as $item) {
+                    $allowed_tags[] = '{' . $item['tags'] . '}';
+                }
     
-                // $allowed_tags = ['{name}', '{gmail}'];
-                // $template->body = preg_replace_callback('/\{[^\}]+\}/', function ($matches) use ($allowed_tags) {
-                //     return in_array($matches[0], $allowed_tags) ? $matches[0] : '';
-                // }, $template->body);
+                $template->body = preg_replace_callback('/\{[^\}]+\}/', function ($matches) use ($allowed_tags) {
+                    return in_array($matches[0], $allowed_tags) ? $matches[0] : '';
+                }, $template->body);
             
-                // $tag_values = [
-                //     '{name}' => $googleUser->getName(),
-                //     '{gmail}' => $googleUser->getEmail()
-                // ];
+                $tag_values = [
+                    '{name}' => $googleUser->getName(),
+                    '{email}' => $googleUser->getEmail()
+                ];
             
-                // $subject = str_replace(array_keys($tag_values), array_values($tag_values), $template->subject);
-                // $body = str_replace(array_keys($tag_values), array_values($tag_values), $template->body);
+                $subject = str_replace(array_keys($tag_values), array_values($tag_values), $template->subject);
+                $body = str_replace(array_keys($tag_values), array_values($tag_values), $template->body);
             
-                // Mail::send('emails.template', ['subject' => $subject, 'body' => $body], function ($message) use ($subject, $googleUser) {
-                //     $message->to($googleUser->getEmail())
-                //             ->subject($subject)
-                //             ->from('info@sarthi.vip', 'SARTHI');
-                // });
+                Mail::send('emails.template', ['subject' => $subject, 'body' => $body], function ($message) use ($subject, $googleUser) {
+                    $message->to($googleUser->getEmail())
+                            ->subject($subject)
+                            ->from('info@brgn.in', 'BRGN');
+                });
             }
     
             Auth::login($user);
+            $template = EmailTemplate::where('type', 'login')->first();
+                $trigger=Trigger::find($template->template_id);
+                $tags=json_decode($trigger->fields,true);
+                $allowed_tags = [];
+                foreach ($tags as $item) {
+                    $allowed_tags[] = '{' . $item['tags'] . '}';
+                }
     
+                $template->body = preg_replace_callback('/\{[^\}]+\}/', function ($matches) use ($allowed_tags) {
+                    return in_array($matches[0], $allowed_tags) ? $matches[0] : '';
+                }, $template->body);
+            
+                $tag_values = [
+                    '{name}' => $googleUser->getName(),
+                    '{email}' => $googleUser->getEmail()
+                ];
+            
+                $subject = str_replace(array_keys($tag_values), array_values($tag_values), $template->subject);
+                $body = str_replace(array_keys($tag_values), array_values($tag_values), $template->body);
+            
+                Mail::send('emails.template', ['subject' => $subject, 'body' => $body], function ($message) use ($subject, $googleUser) {
+                    $message->to($googleUser->getEmail())
+                            ->subject($subject)
+                            ->from('info@brgn.in', 'BRGN');
+                });
             $redirectUrl = session('redirect_after_login', url('/'));
             session()->forget('redirect_after_login'); 
     

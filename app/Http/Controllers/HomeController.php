@@ -4,7 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
-use App\Models\{ListingProduct,Category,Bid,Order,Wallet,Order_billing,Brand,Message,EmailTemplate,User};
+use App\Models\{Trigger,ListingProduct,Category,Bid,Order,Wallet,Order_billing,Brand,Message,EmailTemplate,User};
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Hash;
@@ -320,6 +320,35 @@ class HomeController extends Controller
      
          // Optionally: Save to DB
           Bid::create($bid);
+          $template = EmailTemplate::where('type', 'bidding')->first();
+    
+         $trigger=Trigger::find($template->template_id);
+    $tags=json_decode($trigger->fields,true);
+    $allowed_tags = [];
+    foreach ($tags as $item) {
+        $allowed_tags[] = '{' . $item['tags'] . '}';
+    }
+        $template->body = preg_replace_callback('/\{[^\}]+\}/', function ($matches) use ($allowed_tags) {
+            return in_array($matches[0], $allowed_tags) ? $matches[0] : '';
+        }, $template->body);
+        $tag_values = [
+        '{name}'       => Auth::user()->name,
+        '{product}'    => $product->title ?? 'Product',
+        '{price}'      => $product->price ?? 'N/A',
+        '{bid_amount}' => $bid->amount,
+        '{quantity}'   => $bid->quantity,
+        '{date_time}'   => date('Y-m-d H:i')
+    ];
+
+        $subject = str_replace(array_keys($tag_values), array_values($tag_values), $template->subject);
+        $body = str_replace(array_keys($tag_values), array_values($tag_values), $template->body);
+
+        Mail::send('emails.template', ['subject' => $subject, 'body' => $body], function ($message) use ($subject) {
+            $message->to('abc@gmail.com')
+                    ->subject($subject)
+                    ->from('info@brgn.in', 'BURGAIN');
+        });
+
      
          return response()->json(['success' =>'success', 'bid' => $bid]);
      }
@@ -371,17 +400,26 @@ class HomeController extends Controller
            $order->save();
         }
 
-        $template = EmailTemplate::where('type', 'expiring_soon')->first();
+        $template = EmailTemplate::where('type', 'bid_accept')->first();
     
-        $allowed_tags = ['{tag1}', '{tag2}'];
+        $trigger=Trigger::find($template->template_id);
+    $tags=json_decode($trigger->fields,true);
+    $allowed_tags = [];
+    foreach ($tags as $item) {
+        $allowed_tags[] = '{' . $item['tags'] . '}';
+    }
         $template->body = preg_replace_callback('/\{[^\}]+\}/', function ($matches) use ($allowed_tags) {
             return in_array($matches[0], $allowed_tags) ? $matches[0] : '';
         }, $template->body);
-
-        $tag_values = [
-            '{tag1}' => 'data',
-            '{tag2}' => 'data'
-        ];
+        $product = ListingProduct::find($bid->listingId);
+    $tag_values = [
+        '{name}'      => Auth::user()->name,        
+        '{product}'   => $product->title ?? 'Product',      
+        '{bid_amount}'=> $bid->amount,                     
+        '{quantity}'  => $bid->quantity,                    
+        '{status}'    => ucfirst($bid->status),             
+        '{date_time}' => date('Y-m-d H:i')  
+    ];
 
         $subject = str_replace(array_keys($tag_values), array_values($tag_values), $template->subject);
         $body = str_replace(array_keys($tag_values), array_values($tag_values), $template->body);
@@ -389,7 +427,7 @@ class HomeController extends Controller
         Mail::send('emails.template', ['subject' => $subject, 'body' => $body], function ($message) use ($subject) {
             $message->to('abc@gmail.com')
                     ->subject($subject)
-                    ->from('info@brgn.in', 'BURGAIN');
+                    ->from('info@brgn.in', 'BRGN');
         });
 
          return response()->json(['success' => true]);
@@ -407,16 +445,26 @@ class HomeController extends Controller
                 $bid->counter_response_time = Carbon::now();
                 $bid->save();
 
-                $template = EmailTemplate::where('type', 'expiring_soon')->first();
+                $template = EmailTemplate::where('type', 'bid_counter')->first();
     
-                $allowed_tags = ['{tag1}', '{tag2}'];
+                $trigger=Trigger::find($template->template_id);
+                $tags=json_decode($trigger->fields,true);
+                $allowed_tags = [];
+                foreach ($tags as $item) {
+                    $allowed_tags[] = '{' . $item['tags'] . '}';
+                }
                 $template->body = preg_replace_callback('/\{[^\}]+\}/', function ($matches) use ($allowed_tags) {
                     return in_array($matches[0], $allowed_tags) ? $matches[0] : '';
                 }, $template->body);
-
-                $tag_values = [
-                    '{tag1}' => 'data',
-                    '{tag2}' => 'data'
+                $product = ListingProduct::find($bid->listingId);
+                 $tag_values = [
+                    '{name}'      => Auth::user()->name,        
+                    '{product}'        => $product->title ?? 'Product',             
+                    '{bid_amount}'     => $bid->amount,                             
+                    '{counter_amount}' => $bid->counter_offer_amount ?? 'N/A',                           
+                    '{quantity}'       => $bid->quantity,                           
+                    '{status}'         => ucfirst(str_replace('_',' ',$bid->status)),            
+                    '{date_time}' => date('Y-m-d H:i') 
                 ];
 
                 $subject = str_replace(array_keys($tag_values), array_values($tag_values), $template->subject);
@@ -425,7 +473,7 @@ class HomeController extends Controller
                 Mail::send('emails.template', ['subject' => $subject, 'body' => $body], function ($message) use ($subject) {
                     $message->to('abc@gmail.com')
                             ->subject($subject)
-                            ->from('info@brgn.in', 'BURGAIN');
+                            ->from('info@brgn.in', 'BRGN');
                 });
 
                 return response()->json(['success' => true], 200);

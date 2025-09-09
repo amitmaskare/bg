@@ -4,7 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
-use App\Models\{Bid,ListingProduct,Order,Order_billing,EmailTemplate,User};
+use App\Models\{Trigger,Bid,ListingProduct,Order,Order_billing,EmailTemplate,User};
 use Illuminate\Support\Facades\Session;
 use Illuminate\Support\Facades\DB;
 
@@ -42,6 +42,7 @@ class BidController extends Controller
         $bid->counter_offer_amount=$request->counter_offer_amount ?? 0;
         $bid->counter_response_time=now();
         $bid->save();
+
         if($request->status=='approved')
         {
             $listing=ListingProduct::find($bid->listingId);
@@ -67,20 +68,31 @@ class BidController extends Controller
         }
 
         $buyer = User::find($bid->bidderId);
-
-        $template = EmailTemplate::where('type', 'bid_accept')->first();
-
-        $allowed_tags = ['{name}', '{product}', '{bid_amount}', '{date_time}'];
+        if($request->status=='approved'){
+            $template = EmailTemplate::where('type', 'bid_accept')->first();
+        }else{
+            $template = EmailTemplate::where('type', 'bid_reject')->first();
+        }
+    
+        $trigger=Trigger::find($template->template_id);
+    $tags=json_decode($trigger->fields,true);
+    $allowed_tags = [];
+    foreach ($tags as $item) {
+        $allowed_tags[] = '{' . $item['tags'] . '}';
+    }
         $template->body = preg_replace_callback('/\{[^\}]+\}/', function ($matches) use ($allowed_tags) {
             return in_array($matches[0], $allowed_tags) ? $matches[0] : '';
         }, $template->body);
-
-        $tag_values = [
-            '{name}'       => $buyer->name ?? 'Customer',
-            '{product}'    => $listing->product_name ?? '',
-            '{bid_amount}' => $bid->amount ?? 0,
-            '{date_time}'  => now()->format('d-m-Y H:i:s'),
-        ];
+        $product = ListingProduct::find($bid->listingId);
+     $tag_values = [
+        '{name}'                => $buyer->name ?? 'Buyer',
+        '{product}'             => $listing->title ?? 'Product',
+        '{bid_amount}'          => $bid->amount,
+        '{counter_offer_amount}'=> $bid->counter_offer_amount ?? 0,
+        '{quantity}'            => $bid->quantity,
+        '{status}'              => ucfirst($bid->status),
+        '{date_time}'           => date('Y-m-d H:i') 
+    ];
 
         $subject = str_replace(array_keys($tag_values), array_values($tag_values), $template->subject);
         $body    = str_replace(array_keys($tag_values), array_values($tag_values), $template->body);
@@ -88,7 +100,7 @@ class BidController extends Controller
         Mail::send('emails.template', ['subject' => $subject, 'body' => $body], function ($message) use ($buyer, $subject) {
             $message->to($buyer->email)
                     ->subject($subject)
-                    ->from('info@brgn.in', 'BURGAIN');
+                    ->from('info@brgn.in', 'BRGN');
         });
         
         session::flash('success',"Change Status Successfully");
@@ -106,22 +118,29 @@ class BidController extends Controller
         ]);
 
         $buyer   = DB::table('users')->where('id', $bid->bidderId)->first();
-        $listing = DB::table('products')->where('productId', $bid->listingId)->first();
+        $listing = ListingProduct::find($bid->listingId);
 
-        $template = EmailTemplate::where('type', 'reject')->first();
+        $template = EmailTemplate::where('type', 'bid_reject')->first();
 
-        $allowed_tags = ['{name}', '{product}', '{bid_amount}', '{status}', '{date_time}'];
+        $trigger=Trigger::find($template->template_id);
+        $tags=json_decode($trigger->fields,true);
+        $allowed_tags = [];
+        foreach ($tags as $item) {
+            $allowed_tags[] = '{' . $item['tags'] . '}';
+        }
         $template->body = preg_replace_callback('/\{[^\}]+\}/', function ($matches) use ($allowed_tags) {
             return in_array($matches[0], $allowed_tags) ? $matches[0] : '';
         }, $template->body);
 
         $tag_values = [
-            '{name}'       => $buyer->name ?? 'Customer',
-            '{product}'    => $listing->product_name ?? '',
-            '{bid_amount}' => $bid->amount ?? 0,
-            '{status}'     => 'Rejected',
-            '{date_time}'  => now()->format('d-m-Y H:i:s'),
-        ];
+        '{name}'                => $buyer->name ?? 'Buyer',
+        '{product}'             => $listing->title ?? 'Product',
+        '{bid_amount}'          => $bid->amount,
+        '{counter_offer_amount}'=> $bid->counter_offer_amount ?? 0,
+        '{quantity}'            => $bid->quantity,
+        '{status}'              => ucfirst($bid->status),
+        '{date_time}'           => date('Y-m-d H:i') 
+    ];
 
         $subject = str_replace(array_keys($tag_values), array_values($tag_values), $template->subject);
         $body    = str_replace(array_keys($tag_values), array_values($tag_values), $template->body);
@@ -129,7 +148,7 @@ class BidController extends Controller
         Mail::send('emails.template', ['subject' => $subject, 'body' => $body], function ($message) use ($buyer, $subject) {
             $message->to($buyer->email)
                     ->subject($subject)
-                    ->from('info@brgn.in', 'BURGAIN');
+                    ->from('info@brgn.in', 'BRGN');
         });
 
         return response()->json(['success' => true]);
