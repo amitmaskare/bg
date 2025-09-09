@@ -331,6 +331,7 @@ class HomeController extends Controller
         $template->body = preg_replace_callback('/\{[^\}]+\}/', function ($matches) use ($allowed_tags) {
             return in_array($matches[0], $allowed_tags) ? $matches[0] : '';
         }, $template->body);
+        $userEmail = Auth::user()->email;
         $tag_values = [
         '{name}'       => Auth::user()->name,
         '{product}'    => $product->title ?? 'Product',
@@ -343,8 +344,8 @@ class HomeController extends Controller
         $subject = str_replace(array_keys($tag_values), array_values($tag_values), $template->subject);
         $body = str_replace(array_keys($tag_values), array_values($tag_values), $template->body);
 
-        Mail::send('emails.template', ['subject' => $subject, 'body' => $body], function ($message) use ($subject) {
-            $message->to('abc@gmail.com')
+        Mail::send('emails.template', ['subject' => $subject, 'body' => $body], function ($message) use ($subject, $userEmail) {
+            $message->to($userEmail)
                     ->subject($subject)
                     ->from('info@brgn.in', 'BURGAIN');
         });
@@ -412,6 +413,7 @@ class HomeController extends Controller
             return in_array($matches[0], $allowed_tags) ? $matches[0] : '';
         }, $template->body);
         $product = ListingProduct::find($bid->listingId);
+        $userEmail = Auth::user()->email;
     $tag_values = [
         '{name}'      => Auth::user()->name,        
         '{product}'   => $product->title ?? 'Product',      
@@ -424,8 +426,8 @@ class HomeController extends Controller
         $subject = str_replace(array_keys($tag_values), array_values($tag_values), $template->subject);
         $body = str_replace(array_keys($tag_values), array_values($tag_values), $template->body);
 
-        Mail::send('emails.template', ['subject' => $subject, 'body' => $body], function ($message) use ($subject) {
-            $message->to('abc@gmail.com')
+        Mail::send('emails.template', ['subject' => $subject, 'body' => $body], function ($message) use ($subject,$userEmail) {
+            $message->to($userEmail)
                     ->subject($subject)
                     ->from('info@brgn.in', 'BRGN');
         });
@@ -457,6 +459,7 @@ class HomeController extends Controller
                     return in_array($matches[0], $allowed_tags) ? $matches[0] : '';
                 }, $template->body);
                 $product = ListingProduct::find($bid->listingId);
+                $userEmail = Auth::user()->email;
                  $tag_values = [
                     '{name}'      => Auth::user()->name,        
                     '{product}'        => $product->title ?? 'Product',             
@@ -470,8 +473,8 @@ class HomeController extends Controller
                 $subject = str_replace(array_keys($tag_values), array_values($tag_values), $template->subject);
                 $body = str_replace(array_keys($tag_values), array_values($tag_values), $template->body);
 
-                Mail::send('emails.template', ['subject' => $subject, 'body' => $body], function ($message) use ($subject) {
-                    $message->to('abc@gmail.com')
+                Mail::send('emails.template', ['subject' => $subject, 'body' => $body], function ($message) use ($subject, $userEmail) {
+                    $message->to($userEmail)
                             ->subject($subject)
                             ->from('info@brgn.in', 'BRGN');
                 });

@@ -96,6 +96,46 @@ class OrderInfoController extends Controller
                     DB::table('bids')->where('listingId', $item->listing_id)->where('status', 'pending')->update(['status' => 'rejected']);
                 }
             }
+            // $order = Order::with('billings.listing')->find($orderId);
+
+            // $template = EmailTemplate::where('type', 'bid_counter')->first();
+            // $trigger = Trigger::find($template->template_id);
+            // $tags = json_decode($trigger->fields, true);
+
+            // $allowed_tags = [];
+            // foreach ($tags as $item) {
+            //     $allowed_tags[] = '{' . $item['tags'] . '}';
+            // }
+
+            // $template->body = preg_replace_callback('/\{[^\}]+\}/', function ($matches) use ($allowed_tags) {
+            //     return in_array($matches[0], $allowed_tags) ? $matches[0] : '';
+            // }, $template->body);
+
+
+            // $firstItem = $order->billings->first();
+            // $product = $firstItem?->listing;
+            // $productTitle = $product?->title ?? 'Product';
+            // $productPrice = $firstItem?->price ?? $order->total_amount;
+            // $productQty   = $firstItem?->quantity ?? 1;
+
+            // $tag_values = [
+            //     '{name}'           => $user->name,
+            //     '{product}'        => $productTitle,
+            //     '{price}'          => $productPrice,
+            //     '{quantity}'       => $productQty,
+            //     '{payment_status}' => ucfirst($order->status),
+            //     '{date_time}'      => date('Y-m-d H:i'),
+            // ];
+
+            // $subject = str_replace(array_keys($tag_values), array_values($tag_values), $template->subject);
+            // $body = str_replace(array_keys($tag_values), array_values($tag_values), $template->body);
+
+            // // Email Send
+            // Mail::send('emails.template', ['subject' => $subject, 'body' => $body], function ($message) use ($subject, $user) {
+            //     $message->to($user->email)
+            //             ->subject($subject)
+            //             ->from('info@brgn.in', 'BRGN');
+            // });
         }
 
         CartItem::where('user_id', $userId)->delete();
