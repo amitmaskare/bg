@@ -4,7 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
-use App\Models\{Category,Brand,ListingProduct};
+use App\Models\{Category,Brand,ListingProduct,EmailTemplate};
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Carbon;
 use DB;

@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Address;
+use App\Models\{Address,EmailTemplate};
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
