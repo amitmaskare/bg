@@ -6,7 +6,7 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Laravel\Socialite\Facades\Socialite;
-use App\Models\{User,Employee,EmailTemplate};
+use App\Models\{User,Employee,EmailTemplate,Trigger};
 use Illuminate\Support\Facades\Hash;
 class GoogleauthController extends Controller
 {

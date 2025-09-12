@@ -5,7 +5,7 @@ namespace App\Http\Controllers;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth; 
-use App\Models\{User,Employee,EmailTemplate};
+use App\Models\{User,Employee,EmailTemplate,Trigger};
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\DB;
 class AuthController extends Controller
@@ -38,7 +38,14 @@ class AuthController extends Controller
         ]);
 
         $template = EmailTemplate::where('type', 'register')->first();
-        $trigger=Trigger::find($template->template_id);
+        if(!$template || empty($template))
+        {
+           $templat_id=0;
+        }
+        else{
+            $template_id=$template->template_id ?? '';
+         }
+        $trigger=Trigger::find($template_id ?? '');
         $tags=json_decode($trigger->fields,true);
         $allowed_tags = [];
         foreach ($tags as $item) {
