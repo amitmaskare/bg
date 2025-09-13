@@ -123,7 +123,7 @@ public function add(Request $request)
     $product = ListingProduct::find($listingId);
 
     $userName    = $user->name ?? 'Customer';
-    $userEmail   = $user->email ?? 'info@brgn.in';
+    $userEmail   = $user->email ?? 'akashbarmand@gmail.com';
     $productName = $product->product_name ?? '';
     $productPrice= number_format($product->price, 2);
 
@@ -134,7 +134,7 @@ public function add(Request $request)
     foreach ($tags as $item) {
         $allowed_tags[] = '{' . $item['tags'] . '}';
     }
-
+    // $allowed_tags = ['{name}', '{product}', '{price}', '{date_time}'];
    
     $template->body = preg_replace_callback('/\{[^\}]+\}/', function ($matches) use ($allowed_tags) {
         return in_array($matches[0], $allowed_tags) ? $matches[0] : '';

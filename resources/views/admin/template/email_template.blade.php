@@ -80,9 +80,83 @@
             </div>
             @endsection
 
-@section('add-js-code')            
-<script src="https://cdn.ckeditor.com/ckeditor5/39.0.1/classic/ckeditor.js"></script>
+@section('add-js-code')    
+<!-- Bootstrap 4 (agar project me pehle se nahi hai) -->
+<link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+<script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
+<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.bundle.min.js"></script>
+
+<!-- Summernote CSS/JS -->
+<link href="https://cdnjs.cloudflare.com/ajax/libs/summernote/0.8.20/summernote-bs4.min.css" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/summernote/0.8.20/summernote-bs4.min.js"></script>
+
+
 <script>
+    let editorInitialized = false;
+
+    function getData(template_id) {
+        $.ajax({
+            type: 'POST',
+            url: "{{ route('getTemplateData') }}",
+            data: {
+                template_id: template_id,
+                _token: "{{ csrf_token() }}",
+            },
+            dataType: 'json',
+            success: function (result) {
+                // Body inject karo
+                $('#showBody').show();
+                $('#showBody').html(result.html);
+                $('#subject').val(result.subject);
+
+                // Agar editor pehle se init hua tha, destroy kar do
+                if (editorInitialized) {
+                    $('#editor1').summernote('destroy');
+                    editorInitialized = false;
+                }
+
+                // Summernote initialize karo
+                $('#editor1').summernote({
+                    height: 300,
+                    focus: true,
+                    toolbar: [
+                        ['style', ['bold', 'italic', 'underline', 'clear']],
+                        ['font', ['strikethrough', 'superscript', 'subscript']],
+                        ['color', ['color']],
+                        ['para', ['ul', 'ol', 'paragraph']],
+                        ['table', ['table']],
+                        ['insert', ['link', 'picture']],
+                        ['view', ['fullscreen', 'codeview']]
+                    ]
+                });
+
+                // ✅ Backend se jo body aayi use set karo
+                if (result.body) {
+                    $('#editor1').summernote('code', result.body);
+                }
+
+                editorInitialized = true;
+            },
+            error: function (xhr) {
+                console.log("Error:", xhr.responseText);
+            }
+        });
+    }
+
+    function getTags(tag) {
+        if (tag !== "" && editorInitialized) {
+            // Insert tag at cursor position
+            $('#editor1').summernote('insertText', tag);
+
+            // Reset dropdown
+            document.getElementById("tags").value = "";
+        }
+    }
+</script>
+
+<!-- <script src="https://cdn.ckeditor.com/ckeditor5/41.4.2/classic/ckeditor.js"></script> -->
+
+<!-- <script>
 
     function getData(template_id)
     {
@@ -167,5 +241,101 @@
             if (!valid) e.preventDefault();
         });
     });
-</script>
+</script> -->
+<!-- <script>
+    let editors = {}; // CKEditor instances store karne ke liye
+
+    function getData(template_id) {
+        $.ajax({
+            type: 'POST',
+            url: "{{ route('getTemplateData') }}",
+            data: {
+                template_id: template_id,
+                _token: "{{ csrf_token() }}",
+            },
+            dataType: 'json',
+            success: function (result) {
+                // Body inject karo
+                $('#showBody').show();
+                $('#showBody').html(result.html);
+                $('#subject').val(result.subject);
+
+                // Agar purana editor hai to destroy kar do
+                if (editors['body']) {
+                    editors['body'].destroy()
+                        .then(() => {
+                            delete editors['body'];
+                            initEditor(result.body);
+                        })
+                        .catch(err => {
+                            console.error("Destroy error:", err);
+                            delete editors['body'];
+                            initEditor(result.body);
+                        });
+                } else {
+                    initEditor(result.body);
+                }
+            },
+            error: function (xhr) {
+                console.log("Error:", xhr.responseText);
+            }
+        });
+    }
+
+    // CKEditor initialize karne ka helper
+    function initEditor(initialData) {
+        const editorElement = document.querySelector('#editor1');
+        if (editorElement) {
+            ClassicEditor
+                .create(editorElement, {
+                    toolbar: [
+                     'heading', '|',
+                    'bold', 'italic', 'underline', '|',
+                    'fontColor', 'fontBackgroundColor', '|',
+                    'link', 'insertTable', 'uploadImage', '|',
+                    'bulletedList', 'numberedList', '|',
+                    'undo', 'redo'
+                ],
+                table: {
+                    contentToolbar: [ 'tableColumn', 'tableRow', 'mergeTableCells' ]
+                },
+                image: {
+                    toolbar: [
+                        'imageTextAlternative', 'imageStyle:full', 'imageStyle:side'
+                    ]
+                }
+                })
+                .then(editor => {
+                    editors['body'] = editor;
+
+                    // ✅ Backend ka body set karo
+                    if (initialData) {
+                        editor.setData(initialData);
+                    }
+                })
+                .catch(error => {
+                    console.error("CKEditor init error:", error);
+                });
+        }
+    }
+
+    function getTags(tag) {
+    if (tag !== "" && editors['body']) {
+        // Current editor instance
+        const editor = editors['body'];
+
+        // Cursor (selection) pe tag insert karna
+        editor.model.change(writer => {
+            const insertPosition = editor.model.document.selection.getFirstPosition();
+            writer.insertText(tag, insertPosition);
+        });
+
+        // Reset dropdown
+        document.getElementById("tags").value = "";
+        editor.editing.view.focus();
+    }
+}
+
+</script> -->
+
 @stop

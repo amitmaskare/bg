@@ -153,6 +153,7 @@ class TemplateController extends Controller
             return response()->json([
                 'html'=>$html,
                 'subject'=>!empty($getData->subject) ? $getData->subject:$templateData->template_name,
+                 'body'    => !empty($getData->body) ? $getData->body : '',
             ]);
            // echo $html;
         }
